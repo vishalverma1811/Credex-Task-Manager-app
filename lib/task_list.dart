@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'category_list.dart';
 import 'core/models/category_model.dart';
 import 'core/models/task_model.dart';
@@ -13,12 +12,13 @@ import 'core/widgets/category_provider.dart';
 import 'core/widgets/task_detail.dart';
 import 'core/widgets/task_provider.dart';
 import 'main.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 
 class TaskList extends StatefulWidget {
   const TaskList({Key? key}) : super(key: key);
 
   @override
-  State createState() => _ListTileExample();
+  State createState() => _ListTile();
 }
 
 class InnerList {
@@ -32,31 +32,34 @@ class InnerList {
 }
 
 
-class _ListTileExample extends State<TaskList> with RestorationMixin {
+class _ListTile extends State<TaskList> {
   final TaskProvider taskProvider = TaskProvider();
   final CategoryProvider categoryProvider = CategoryProvider();
   List<InnerList> _lists = [];
   late List<Task> tasks;
   late List<Category> categories;
-
-  // Restoration properties
-  final RestorableInt _selectedTabIndex = RestorableInt(0);
-
-  @override
-  String get restorationId => 'taskList';
-
-  @override
-  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
-    registerForRestoration(_selectedTabIndex, 'selected_tab_index');
-  }
-
+  double completePercetage = 0;
 
   @override
   void initState() {
     super.initState();
     fetchDataFromHive();
+    percentageOfTasks();
   }
 
+  double percentageOfTasks(){
+    int completeTaskCount = 0;
+    for (Task task in tasksBox.values) {
+      if (task.category == 'Completed') {
+        completeTaskCount++;
+      }
+    }
+    int totalTaskCount = tasksBox.values.length;
+    print(totalTaskCount);
+    completePercetage = totalTaskCount > 0 ? double.parse((completeTaskCount/ totalTaskCount).toStringAsFixed(1)) : 0;
+    print(completeTaskCount);
+    return completePercetage;
+  }
 
   // void checkDueDateAndScheduleNotification(NotificationManager notificationManager) {
   //   for(Task task in tasks){
@@ -113,16 +116,26 @@ class _ListTileExample extends State<TaskList> with RestorationMixin {
         actions: [
           Row(
             children: [
+              CircularPercentIndicator(
+                radius: 20.0,
+                lineWidth: 4.0,
+                percent: completePercetage,
+                center: Text((completePercetage * 100).toString()),
+                progressColor: Colors.indigoAccent,
+              ),
+              SizedBox(width: 25,),
               IconButton(onPressed: (){
                 Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryList()));
-              }, icon: Icon(Icons.category_outlined)),
+              }, tooltip: 'Categories',
+                  icon: Icon(Icons.category_outlined)),
               IconButton(onPressed: (){
-                restoreTaskBackup();
-              }, icon: Icon(Icons.restore)),
+                restoreBackup ();
+              }, tooltip: 'Restore Data',
+                  icon: Icon(Icons.restore)),
               IconButton(onPressed: (){
                 taskBackup();
-                categoryBackup();
-              }, icon: Icon(Icons.backup_outlined)),
+              }, tooltip: 'Backup Tasks and Categories',
+                  icon: Icon(Icons.backup_outlined)),
             ],
           )
         ],
@@ -221,32 +234,30 @@ class _ListTileExample extends State<TaskList> with RestorationMixin {
           i++;
 
         });
-
-        print(tasks.length);
-
-
-
-        for( Task task in listToAdd){
-          print(task.title);
-        }
-
-
       } else {
-        var innerList = _lists[oldListIndex];
-        var innerList2 = _lists[newListIndex];
-        var movedList = innerList.tasks.removeAt(oldItemIndex);
-        innerList2.tasks.insert(newItemIndex, movedList);
-        innerList2.tasks[newItemIndex].category = innerList2.category;
-        print(innerList2.tasks[newItemIndex].category);
-        print(innerList2.tasks[newItemIndex].title);
+        if(_lists[oldListIndex].category == 'All Tasks'|| _lists[newListIndex].category == 'All Tasks'){
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid Drag and Drop')),
+          );
+        }
+        else{
+          var innerList = _lists[oldListIndex];
+          var innerList2 = _lists[newListIndex];
+          var movedList = innerList.tasks.removeAt(oldItemIndex);
+          innerList2.tasks.insert(newItemIndex, movedList);
+          innerList2.tasks[newItemIndex].category = innerList2.category;
 
-        tasks.where((element) =>
-        element.title == innerList2.tasks[newItemIndex].title)
-            .forEach((element) {
-          tasksBox.deleteAt(tasks.indexOf(element));
-          tasksBox.add(innerList2.tasks[newItemIndex]);
-        });
+          tasks.where((element) =>
+          element.title == innerList2.tasks[newItemIndex].title)
+              .forEach((element) {
+            tasksBox.deleteAt(tasks.indexOf(element));
+            tasksBox.add(innerList2.tasks[newItemIndex]);
+          });
+        }
       }
+
+      //update percentage
+      percentageOfTasks();
     });
   }
 
@@ -269,139 +280,205 @@ class _ListTileExample extends State<TaskList> with RestorationMixin {
     });
   }
   //create backup of tasks
-  Future taskBackup() async {
+  Future<void> taskBackup() async {
     if (tasksBox.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No Tasks Stored.')),
       );
       return;
     }
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Creating task backup...')),
+      const SnackBar(content: Text('Creating backup...')),
     );
-    Map map = tasksBox
-        .toMap()
-        .map((key, value) => MapEntry(key.toString(), value));
+
+    Map map = tasksBox.toMap().map((key, value) => MapEntry(key.toString(), value));
     String json = jsonEncode(map);
-    Directory dir = await _tasksDirectory();
-    String formattedDate = DateTime.now()
-        .toString()
-        .replaceAll('.', '-')
-        .replaceAll(' ', '-')
-        .replaceAll(':', '-');
-    String path = '${dir.path}$formattedDate.json';
-    File backupFile = File(path);
-    await backupFile.writeAsString(json);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Backup saved in folder Tasks')),
-    );
-  }
-  Future _tasksDirectory() async {
-    const String pathExt = 'Tasks';
 
-    Directory? directory;
+    Directory? dir;
     try {
-      directory = await getExternalStorageDirectory()!;
-      directory = Directory('${directory?.path}/$pathExt');
-      if (!(await directory.exists())) {
-        directory = await directory.create(recursive: true);
-      }
+      String downloadsPath = (await DownloadsPath.downloadsDirectory())?.path ?? "";
+      dir = Directory(downloadsPath);
     } catch (e) {
-      print('Error accessing external storage: $e');
-    }
-
-    return directory;
-  }
-
-  //create backup of category
-  Future categoryBackup() async {
-    if (categoriesBox.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No Category Stored.')),
-      );
+      print('Error accessing downloads directory: $e');
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Creating Category backup...')),
-    );
-    Map map = categoriesBox
-        .toMap()
-        .map((key, value) => MapEntry(key.toString(), value));
-    String json = jsonEncode(map);
-    Directory dir = await _categoryDirectory();
+
     String formattedDate = DateTime.now()
         .toString()
         .replaceAll('.', '-')
         .replaceAll(' ', '-')
         .replaceAll(':', '-');
-    String path = '${dir.path}$formattedDate.json';
+    String path = '${dir.path}/TasksBackup_$formattedDate.json';
+
     File backupFile = File(path);
     await backupFile.writeAsString(json);
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Backup saved in folder Category')),
+      const SnackBar(content: Text('Backup saved in Downloads folder')),
     );
   }
-  Future _categoryDirectory() async {
-    const String pathExt = 'Category';
 
-    Directory? directory;
-    try {
-      directory = await getExternalStorageDirectory()!;
-      directory = Directory('${directory?.path}/$pathExt');
-      if (!(await directory.exists())) {
-        directory = await directory.create(recursive: true);
+
+  Future<void> restoreBackup() async {
+    setState(() async {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Restoring backup...')),
+      );
+
+      FilePickerResult? file = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+      );
+
+      if (file != null) {
+        File backupFile = File(file.files.single.path!);
+
+        if (!backupFile.existsSync()) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid backup file')),
+          );
+          return;
+        }
+
+        try {
+          String jsonContent = await backupFile.readAsString();
+          Map<String, dynamic> backupMap = jsonDecode(jsonContent);
+
+          // Clear existing tasks
+          tasksBox.deleteAll(tasksBox.keys);
+
+          // Restore tasks from backup
+          backupMap.forEach((key, value) {
+            Task task = Task.fromJson(value);
+            tasksBox.put(int.parse(key), task);
+          });
+
+          //restore category
+          List<String> defaultCategories = ['Open', 'In Progress', 'Stuck', 'Completed'];
+          List<String> categoryBackup = [];
+
+          //adding all default categories
+          for(String i in defaultCategories){
+            categoryBackup.add(i);
+          }
+
+          //adding category other than default
+          for (Task task in tasksBox.values) {
+            if(task.category != 'Open' && task.category != 'In Progress' && task.category != 'Stuck' && task.category != 'Completed'){
+              categoryBackup.add(task.category);
+              print(task.category);
+            }
+          }
+
+          categoriesBox.deleteAll(categoriesBox.keys);
+          for (String i in categoryBackup) {
+            categoriesBox.add(Category(category: i));
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Restored Successfully...')),
+          );
+        } catch (e) {
+          print('Error restoring backup: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error restoring backup')),
+          );
+        }
       }
-    } catch (e) {
-      print('Error accessing external storage: $e');
-    }
 
-    return directory;
+      fetchDataFromHive();
+      percentageOfTasks();
+    });
   }
-
-
-  //restore task backup
-  Future<void> restoreTaskBackup() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Restoring backup...')),
-    );
-
-    FilePickerResult? file = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-    );
-
-    if (file != null) {
-      File backupFile = File(file.files.single.path!);
-
-      if (!backupFile.existsSync()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid backup file')),
-        );
-        return;
-      }
-
-      try {
-        String jsonContent = await backupFile.readAsString();
-        Map<String, dynamic> backupMap = jsonDecode(jsonContent);
-
-        // Clear existing tasks
-        tasksBox.clear();
-
-        // Restore tasks from backup
-        backupMap.forEach((key, value) {
-          Task task = Task.fromJson(value);
-          tasksBox.put(int.parse(key), task);
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Restored Successfully...')),
-        );
-      } catch (e) {
-        print('Error restoring backup: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error restoring backup')),
-        );
-      }
-    }
-  }
-
 }
+
+
+
+// Future<void> restoreBackup() async {
+//   ScaffoldMessenger.of(context).showSnackBar(
+//     const SnackBar(content: Text('Restoring backup...')),
+//   );
+//
+//   List<FilePickerResult?> files = [];
+//   for(int i =0; i < 2; i++){
+//     FilePickerResult? file = await FilePicker.platform.pickFiles(
+//       type: FileType.any,
+//       allowMultiple: true,
+//     );
+//     files.add(file);
+//     if(i < 1){
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text('Please select exactly 2 files')),
+//       );
+//     }
+//   }
+//
+//   // if (files == null || files.length != 2) {
+//   //   ScaffoldMessenger.of(context).showSnackBar(
+//   //     const SnackBar(content: Text('Please select exactly 2 files')),
+//   //   );
+//   //   return;
+//   // }
+//
+//   File? tasksBackupFile;
+//   File? categoryBackupFile;
+//
+//   for (FilePickerResult? file in files) {
+//     if (file != null) {
+//       File backupFile = File(file.files.single.path!);
+//
+//       if (!backupFile.existsSync()) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(content: Text('Invalid backup file')),
+//         );
+//         return;
+//       }
+//
+//       String fileName = backupFile.uri.pathSegments.last;
+//
+//       if (fileName.startsWith('Tasks')) {
+//         tasksBackupFile = backupFile;
+//       } else if (fileName.startsWith('Category')) {
+//         categoryBackupFile = backupFile;
+//       }
+//     }
+//   }
+//
+//   if (tasksBackupFile == null || categoryBackupFile == null) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(content: Text('Please select both Tasks and Category backup files')),
+//     );
+//     return;
+//   }
+//
+//   try {
+//     // Clear existing tasks and categories
+//     tasksBox.deleteAll();
+//     categoriesBox.deleteAll();
+//
+//     // Restore tasks from Tasks backup file
+//     String tasksJsonContent = await tasksBackupFile.readAsString();
+//     Map<String, dynamic> tasksBackupMap = jsonDecode(tasksJsonContent);
+//     tasksBackupMap.forEach((key, value) {
+//       Task task = Task.fromJson(value);
+//       tasksBox.put(int.parse(key), task);
+//     });
+//
+//     // Restore categories from Category backup file
+//     String categoryJsonContent = await categoryBackupFile.readAsString();
+//     Map<String, dynamic> categoryBackupMap = jsonDecode(categoryJsonContent);
+//     categoryBackupMap.forEach((key, value) {
+//       Category category = Category.fromJson(value);
+//       categoriesBox.put(int.parse(key), category);
+//     });
+//
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(content: Text('Restored Successfully...')),
+//     );
+//   } catch (e) {
+//     print('Error restoring backup: $e');
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(content: Text('Error restoring backup')),
+//     );
+//   }
+// }

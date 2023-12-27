@@ -17,6 +17,7 @@ class _CategoryListState extends State<CategoryList> {
   final TaskProvider taskProvider = TaskProvider();
   final CategoryProvider categoryProvider = CategoryProvider();
   late List<Category> categories = categoryProvider.categories;
+  List<String> defaultCategories = ['Open', 'In Progress', 'Stuck', 'Completed'];
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +36,19 @@ class _CategoryListState extends State<CategoryList> {
             itemCount: categories.length,
             itemBuilder: (context, index) {
               Category category = categories[index];
+              bool isDefaultCategory = defaultCategories.contains(category.category);
               return Card(
                 child: ListTile(
                   title: Text(category.category),
-                  trailing: IconButton(
+                  trailing: isDefaultCategory ? IconButton(
+                    icon: Icon(Icons.not_interested),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cannot Delete Default Categories')),
+                      );
+                    },
+                  ) :
+                  IconButton(
                     icon: Icon(Icons.delete),
                     onPressed: () {
                       _showDeleteDialog(context, index);

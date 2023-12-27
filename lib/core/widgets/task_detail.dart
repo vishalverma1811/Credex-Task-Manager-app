@@ -259,7 +259,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                       context,
                       MaterialPageRoute(builder: (context) => TaskList()),
                     );
-                  },
+                  } ,
                   child: Text('Save'),
                 ),
                 SizedBox(width: 15,),

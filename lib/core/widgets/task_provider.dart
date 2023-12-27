@@ -15,7 +15,6 @@ class TaskProvider with ChangeNotifier {
   Future<void> loadTasks() async {
     try {
       task =  tasksBox.values.toList();
-      print(task);
       notifyListeners();
     } catch (error) {
       print('Error loading tasks: $error');
