@@ -42,7 +42,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = Provider.of<TaskProvider>(context);
+    // final taskProvider = Provider.of<TaskProvider>(context);
 
     for(int i = 0; i < categories.length; i++){
       print(categories[i]);
@@ -247,7 +247,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
                 print(categoryToAdd);
                 if (title.isNotEmpty && description.isNotEmpty && status.isNotEmpty) {
-                  if(taskProvider.tasks.any((task) => task.title == title)){
+                  if(TaskProvider().tasks.any((task) => task.title.compareTo(title) == 0)){
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Task with the same title already exists'),
@@ -256,7 +256,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     );
                   }
                   else{
-                    taskProvider.addTask(
+                    TaskProvider().addTask(
                       Task(
                         title: title,
                         description: description,

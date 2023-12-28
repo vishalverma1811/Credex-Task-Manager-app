@@ -14,6 +14,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> loadTasks() async {
     try {
+      task = [];
       task =  tasksBox.values.toList();
       notifyListeners();
     } catch (error) {

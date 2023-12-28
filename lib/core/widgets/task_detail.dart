@@ -20,7 +20,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
   late TextEditingController statusController;
   late String defaultCategory;
   late String selectedCategory = '';
-  final TaskProvider taskProvider = TaskProvider();
+  //final TaskProvider taskProvider = TaskProvider();
   List<String> categories = [];
   TextEditingController dateController = TextEditingController();
   TextEditingController timeController = TextEditingController();
@@ -253,7 +253,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                       dueDate: selectedDate,
                     );
 
-                    taskProvider.updateTask(taskProvider.tasks.indexOf(widget.task), updatedTask);
+                    TaskProvider().updateTask(TaskProvider().tasks.indexOf(widget.task), updatedTask);
                     Navigator.pop(context);
                     Navigator.pushReplacement(
                       context,
@@ -264,7 +264,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                 ),
                 SizedBox(width: 15,),
                 ElevatedButton(onPressed: (){
-                  taskProvider.deleteTask(taskProvider.tasks.indexOf(widget.task));
+                  TaskProvider().deleteTask(TaskProvider().tasks.indexOf(widget.task));
                   Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,

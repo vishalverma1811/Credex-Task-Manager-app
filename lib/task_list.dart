@@ -33,7 +33,6 @@ class InnerList {
 
 
 class _ListTile extends State<TaskList> {
-  final TaskProvider taskProvider = TaskProvider();
   final CategoryProvider categoryProvider = CategoryProvider();
   List<InnerList> _lists = [];
   late List<Task> tasks;
