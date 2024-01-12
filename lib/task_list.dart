@@ -1,16 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:credex_task_manager/core/widgets/about.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'category_list.dart';
 import 'core/models/category_model.dart';
 import 'core/models/task_model.dart';
 import 'core/widgets/add_task.dart';
 import 'core/widgets/category_provider.dart';
+import 'core/widgets/category_status_provider.dart';
 import 'core/widgets/task_detail.dart';
-import 'core/widgets/task_provider.dart';
 import 'main.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 
@@ -38,46 +39,42 @@ class _ListTile extends State<TaskList> {
   late List<Task> tasks;
   late List<Category> categories;
   double completePercetage = 0;
+  //late List<bool> categoryExpansionStates;
 
   @override
   void initState() {
     super.initState();
     fetchDataFromHive();
-    percentageOfTasks();
+    //percentageOfTasks();
+    //initializeCategoryStatusList();
   }
 
-  double percentageOfTasks(){
-    int completeTaskCount = 0;
-    for (Task task in tasksBox.values) {
-      if (task.category == 'Completed') {
-        completeTaskCount++;
-      }
-    }
-    int totalTaskCount = tasksBox.values.length;
-    print(totalTaskCount);
-    completePercetage = totalTaskCount > 0 ? double.parse((completeTaskCount/ totalTaskCount).toStringAsFixed(1)) : 0;
-    print(completeTaskCount);
-    return completePercetage;
-  }
-
-  // void checkDueDateAndScheduleNotification(NotificationManager notificationManager) {
-  //   for(Task task in tasks){
-  //     DateTime dueDate = task.dueDate;
-  //
-  //     if (isDueDateToday(dueDate)) {
-  //       notificationManager.scheduleNotification(
-  //         task.title,
-  //         'Your task is due today!',
-  //         dueDate,
-  //       );
+  // void initializeCategoryStatusList() {
+  //   for (Category category in categories) {
+  //     bool status = CategoryStatusProvider().getCategoryStatus(category.category);
+  //     if (status) {
+  //       // Expand the list if the status is true
+  //       _onListExpansion(category.category, true);
   //     }
   //   }
   // }
-  //
-  // bool isDueDateToday(DateTime dueDate) {
-  //   DateTime now = DateTime.now();
-  //   return dueDate.year == now.year && dueDate.month == now.month && dueDate.day == now.day;
+
+  // double percentageOfTasks(){
+  //   int completeTaskCount = 0;
+  //   for (Task task in tasksBox.values) {
+  //     if (task.category == 'Completed') {
+  //       completeTaskCount++;
+  //     }
+  //   }
+  //   int totalTaskCount = tasksBox.values.length;
+  //   print(totalTaskCount);
+  //   completePercetage = totalTaskCount > 0 ? double.parse((completeTaskCount/ totalTaskCount).toStringAsFixed(1)) : 0;
+  //   print(completeTaskCount);
+  //   return completePercetage;
   // }
+
+
+
 
   Future<void> fetchDataFromHive() async {
 
@@ -85,17 +82,32 @@ class _ListTile extends State<TaskList> {
     categories = categoriesBox.values.toList();
 
     if (tasks.isEmpty) {
-      setState(() {
-        _lists = [];
-      });
-    } else {
-      final categoryNames = ['All Tasks', ...categories.map((category) => category.category).toList()];
+      // setState(() {
+      //   _lists = [];
+      // });
+      final categoryNames = ['All Tasks','Today', ...categories.map((category) => category.category).toList()];
 
       setState(() {
         _lists = List.generate(categoryNames.length, (categoryIndex) {
           final categoryName = categoryNames[categoryIndex];
           final categoryTasks = (categoryName == 'All Tasks')
-              ? tasks
+              ? tasks : categoryName == 'Today' ? tasks.where((task) => task.dueDate.day == DateTime.now().day && task.dueDate.month == DateTime.now().month && task.dueDate.year == DateTime.now().year).toList()
+              : tasks.where((task) => task.category == categoryName).toList();
+
+          return InnerList(
+            tasks: categoryTasks,
+            category: categoryName,
+          );
+        });
+      });
+    } else {
+      final categoryNames = ['All Tasks','Today', ...categories.map((category) => category.category).toList()];
+
+      setState(() {
+        _lists = List.generate(categoryNames.length, (categoryIndex) {
+          final categoryName = categoryNames[categoryIndex];
+          final categoryTasks = (categoryName == 'All Tasks')
+              ? tasks : categoryName == 'Today' ? tasks.where((task) => task.dueDate.day == DateTime.now().day && task.dueDate.month == DateTime.now().month && task.dueDate.year == DateTime.now().year).toList()
               : tasks.where((task) => task.category == categoryName).toList();
 
           return InnerList(
@@ -111,30 +123,38 @@ class _ListTile extends State<TaskList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Task List'),
+          title: const Text('Task Manager'),
         actions: [
           Row(
             children: [
-              CircularPercentIndicator(
-                radius: 20.0,
-                lineWidth: 4.0,
-                percent: completePercetage,
-                center: Text((completePercetage * 100).toString()),
-                progressColor: Colors.indigoAccent,
+              IconButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryList()));
+                },
+                tooltip: 'Categories',
+                icon: Image.asset(
+                  'assets/menu.png',
+                  width: 24,
+                  height: 24,
+                ),
               ),
-              SizedBox(width: 25,),
-              IconButton(onPressed: (){
-                Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryList()));
-              }, tooltip: 'Categories',
-                  icon: Icon(Icons.category_outlined)),
               IconButton(onPressed: (){
                 restoreBackup ();
               }, tooltip: 'Restore Data',
-                  icon: Icon(Icons.restore)),
+                icon: Image.asset(
+                  'assets/cloud.png',
+                  width: 24,
+                  height: 24,
+                ),),
               IconButton(onPressed: (){
                 taskBackup();
               }, tooltip: 'Backup Tasks and Categories',
-                  icon: Icon(Icons.backup_outlined)),
+                icon: Image.asset(
+                  'assets/backup.png',
+                  width: 24,
+                  height: 24,
+                ),
+              ),
             ],
           )
         ],
@@ -144,6 +164,8 @@ class _ListTile extends State<TaskList> {
         children: List.generate(_lists.length, (index) => _buildList(index)),
         onItemReorder: _onItemReorder,
         onListReorder: _onListReorder,
+        removeTopPadding: true,
+
         // listGhost is mandatory when using expansion tiles to prevent multiple widgets using the same globalkey
         listGhost: Padding(
           padding: const EdgeInsets.symmetric(vertical: 30.0),
@@ -159,43 +181,71 @@ class _ListTile extends State<TaskList> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddTaskPage()),
-          );
-        },
-        child: Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddTaskPage()),
+              );
+            },
+            child: Icon(Icons.add),
+          ),
+          SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => aboutPage()));
+            },
+            child: Icon(Icons.info_outline),
+          ),
+        ],
       ),
     );
   }
-
+  // void _onListExpansion(String category, bool expanded) {
+  //   CategoryStatusProvider().updateCategoryStatus(category, expanded);
+  // }
   _buildList(int outerIndex) {
     var innerList = _lists[outerIndex];
+    int count = innerList.tasks.length;
+    int totalTask = tasksBox.values.length;
+    int completeTask = innerList.tasks.where((task) => task.category == 'Completed').length;
     return DragAndDropListExpansion(
-      title: Text('${innerList.category}'),
+      title: innerList.category == 'All Tasks' ? Text('${innerList.category} ($completeTask/$totalTask)') :Text('${innerList.category} ($count)'),
       children: List.generate(
         innerList.tasks.length,
             (index) => _buildItem(innerList.tasks[index]),
       ),
       listKey: ObjectKey(innerList.category),
+      // onExpansionChanged: (expanded) {
+      //   _onListExpansion(innerList.category, expanded);
+      // },
     );
   }
 
   _buildItem(Task task) {
-    int taskdate = task.dueDate.day;
-    int currentDate = DateTime.now().day;
-    int taskMonth = task.dueDate.month;
-    int currentMonth =  DateTime.now().month;
-
     Color itemColor;
+
     if (task.category == 'Completed') {
       itemColor = Colors.green;
     } else {
-      itemColor = taskdate == currentDate && taskMonth == currentMonth
-          ? Colors.orange
-          : (taskdate < currentDate && taskMonth == currentMonth ? Colors.red : Colors.black);
+      DateTime currentDate = DateTime.now();
+      DateTime taskDueDate = task.dueDate;
+
+      if (taskDueDate.isBefore(currentDate)) {
+        // Task due date is in the past
+        itemColor = Colors.red;
+      } else if (taskDueDate.day == currentDate.day &&
+          taskDueDate.month == currentDate.month &&
+          taskDueDate.year == currentDate.year) {
+        // Task due date is today
+        itemColor = Colors.orange;
+      } else {
+        // Default color for other cases
+        itemColor = Colors.black;
+      }
     }
     return DragAndDropItem(
       child: ListTile(
@@ -234,29 +284,31 @@ class _ListTile extends State<TaskList> {
 
         });
       } else {
-        if(_lists[oldListIndex].category == 'All Tasks'|| _lists[newListIndex].category == 'All Tasks'){
+        if(_lists[oldListIndex].category == 'All Tasks'|| _lists[newListIndex].category == 'All Tasks'||
+            _lists[oldListIndex].category == 'Today'|| _lists[newListIndex].category == 'Today'){
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Invalid Drag and Drop')),
           );
         }
-        else{
+        else {
           var innerList = _lists[oldListIndex];
           var innerList2 = _lists[newListIndex];
           var movedList = innerList.tasks.removeAt(oldItemIndex);
+          movedList.category = innerList2.category;
           innerList2.tasks.insert(newItemIndex, movedList);
-          innerList2.tasks[newItemIndex].category = innerList2.category;
-
-          tasks.where((element) =>
+          tasks
+              .where((element) =>
           element.title == innerList2.tasks[newItemIndex].title)
               .forEach((element) {
-            tasksBox.deleteAt(tasks.indexOf(element));
-            tasksBox.add(innerList2.tasks[newItemIndex]);
+            int index = tasks.indexOf(element);
+            print(index);
+            tasksBox.putAt(index, element);
           });
         }
       }
 
       //update percentage
-      percentageOfTasks();
+      //percentageOfTasks();
     });
   }
 
@@ -386,98 +438,27 @@ class _ListTile extends State<TaskList> {
       }
 
       fetchDataFromHive();
-      percentageOfTasks();
+      //percentageOfTasks();
     });
   }
 }
 
 
-
-// Future<void> restoreBackup() async {
-//   ScaffoldMessenger.of(context).showSnackBar(
-//     const SnackBar(content: Text('Restoring backup...')),
-//   );
+// void checkDueDateAndScheduleNotification(NotificationManager notificationManager) {
+//   for(Task task in tasks){
+//     DateTime dueDate = task.dueDate;
 //
-//   List<FilePickerResult?> files = [];
-//   for(int i =0; i < 2; i++){
-//     FilePickerResult? file = await FilePicker.platform.pickFiles(
-//       type: FileType.any,
-//       allowMultiple: true,
-//     );
-//     files.add(file);
-//     if(i < 1){
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text('Please select exactly 2 files')),
+//     if (isDueDateToday(dueDate)) {
+//       notificationManager.scheduleNotification(
+//         task.title,
+//         'Your task is due today!',
+//         dueDate,
 //       );
 //     }
 //   }
+// }
 //
-//   // if (files == null || files.length != 2) {
-//   //   ScaffoldMessenger.of(context).showSnackBar(
-//   //     const SnackBar(content: Text('Please select exactly 2 files')),
-//   //   );
-//   //   return;
-//   // }
-//
-//   File? tasksBackupFile;
-//   File? categoryBackupFile;
-//
-//   for (FilePickerResult? file in files) {
-//     if (file != null) {
-//       File backupFile = File(file.files.single.path!);
-//
-//       if (!backupFile.existsSync()) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('Invalid backup file')),
-//         );
-//         return;
-//       }
-//
-//       String fileName = backupFile.uri.pathSegments.last;
-//
-//       if (fileName.startsWith('Tasks')) {
-//         tasksBackupFile = backupFile;
-//       } else if (fileName.startsWith('Category')) {
-//         categoryBackupFile = backupFile;
-//       }
-//     }
-//   }
-//
-//   if (tasksBackupFile == null || categoryBackupFile == null) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text('Please select both Tasks and Category backup files')),
-//     );
-//     return;
-//   }
-//
-//   try {
-//     // Clear existing tasks and categories
-//     tasksBox.deleteAll();
-//     categoriesBox.deleteAll();
-//
-//     // Restore tasks from Tasks backup file
-//     String tasksJsonContent = await tasksBackupFile.readAsString();
-//     Map<String, dynamic> tasksBackupMap = jsonDecode(tasksJsonContent);
-//     tasksBackupMap.forEach((key, value) {
-//       Task task = Task.fromJson(value);
-//       tasksBox.put(int.parse(key), task);
-//     });
-//
-//     // Restore categories from Category backup file
-//     String categoryJsonContent = await categoryBackupFile.readAsString();
-//     Map<String, dynamic> categoryBackupMap = jsonDecode(categoryJsonContent);
-//     categoryBackupMap.forEach((key, value) {
-//       Category category = Category.fromJson(value);
-//       categoriesBox.put(int.parse(key), category);
-//     });
-//
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text('Restored Successfully...')),
-//     );
-//   } catch (e) {
-//     print('Error restoring backup: $e');
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text('Error restoring backup')),
-//     );
-//   }
+// bool isDueDateToday(DateTime dueDate) {
+//   DateTime now = DateTime.now();
+//   return dueDate.year == now.year && dueDate.month == now.month && dueDate.day == now.day;
 // }

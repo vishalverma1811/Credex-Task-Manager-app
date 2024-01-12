@@ -199,7 +199,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: dateOnly,
-                          lastDate: DateTime(2024),
+                          lastDate: DateTime(2100),
                         );
                         await validate_date(context, datePicked!, dateOnly);
                       },
@@ -229,7 +229,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                     SizedBox(width: MediaQuery.of(context).size.width * 0.36),
                     GestureDetector(
                       onTap: () async {
-                        await _selectTime(context);
+                        await _selectTime(context, selectedDate);
                       },
                       child: Icon(Icons.access_time_rounded, size: 24, color: Colors.black),
                     ),
@@ -263,20 +263,52 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                   child: Text('Save'),
                 ),
                 SizedBox(width: 15,),
-                ElevatedButton(onPressed: (){
-                  TaskProvider().deleteTask(TaskProvider().tasks.indexOf(widget.task));
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => TaskList()),
-                  );
-                },
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Are you sure?"),
+                          content: Text("Do you really want to delete this task?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text("No"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                TaskProvider().deleteTask(TaskProvider().tasks.indexOf(widget.task));
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => TaskList()),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: Text(
+                                'Yes',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                   ),
-                  child: Text('Delete',
+                  child: Text(
+                    'Delete',
                     style: TextStyle(color: Colors.white),
-                  ),),
+                  ),
+                ),
               ],
             ),
           ],

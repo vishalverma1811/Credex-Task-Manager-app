@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'core/models/category_model.dart';
 import 'core/models/task_model.dart';
 import 'core/widgets/category_provider.dart';
+import 'core/widgets/category_status_provider.dart';
 import 'core/widgets/task_provider.dart';
 late final tasksBox;
 late final categoriesBox;
@@ -30,6 +31,7 @@ void main() async {
   runApp(
       MultiProvider(
         providers: [
+          //ChangeNotifierProvider(create: (context) => CategoryStatusProvider()),
           ChangeNotifierProvider(create: (context) => TaskProvider()),
           ChangeNotifierProvider(create: (context) => CategoryProvider()),
         ],

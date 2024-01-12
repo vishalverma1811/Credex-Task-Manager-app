@@ -94,83 +94,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
               style: TextStyle(
                 fontSize: 16,),
             ),
-            // TextField(
-            //   controller: dateController,
-            //   readOnly: true,
-            //   onTap: () async {
-            //     final DateTime currentDate = DateTime.now();
-            //     DateTime dateOnly = DateTime(currentDate.year, currentDate.month, currentDate.day,);
-            //
-            //     final DateTime? datePicked = await showDatePicker(
-            //       context: context,
-            //       initialDate: DateTime.now(),
-            //       firstDate: dateOnly,
-            //       lastDate: DateTime(2024),
-            //     );
-            //
-            //     if (datePicked != null && datePicked != selectedDate) {
-            //       if (datePicked == dateOnly || datePicked.isAfter(dateOnly)) {
-            //         final TimeOfDay? timePicked = await showTimePicker(
-            //           context: context,
-            //           initialTime: TimeOfDay(hour: 16, minute: 0),
-            //         );
-            //
-            //         if (timePicked != null) {
-            //           DateTime selectedDateTime = DateTime(
-            //             datePicked.year,
-            //             datePicked.month,
-            //             datePicked.day,
-            //             timePicked.hour,
-            //             timePicked.minute,
-            //           );
-            //
-            //           setState(() {
-            //             selectedDate = selectedDateTime;
-            //             dateController.text = DateFormat('yyyy-MM-dd HH:mm').format(selectedDate);
-            //           });
-            //         }
-            //       } else {
-            //         showDialog(
-            //           context: context,
-            //           builder: (BuildContext context) {
-            //             return AlertDialog(
-            //               title: Text('Invalid Date Selection'),
-            //               content: Text('Please select a date in the future.'),
-            //               actions: <Widget>[
-            //                 TextButton(
-            //                   onPressed: () {
-            //                     Navigator.pop(context); // Close the dialog
-            //                   },
-            //                   child: Text('OK'),
-            //                 ),
-            //               ],
-            //             );
-            //           },
-            //         );
-            //       }
-            //     }
-            //   },
-            //   decoration: InputDecoration(
-            //     suffixIcon: Row(
-            //       mainAxisSize: MainAxisSize.min,
-            //       mainAxisAlignment: MainAxisAlignment.end,
-            //       children: [
-            //         if (selectedDate != null)
-            //           Expanded(
-            //             child: Text(
-            //               '${selectedDate != null ? DateFormat('yyyy-MM-dd HH:mm').format(selectedDate!) : ''}',
-            //               style: TextStyle(
-            //                 color: Colors.black,
-            //                 fontSize: 15,
-            //               ),
-            //             ),
-            //           ),
-            //         SizedBox(width: MediaQuery.of(context).size.width * 0.36,),
-            //         Icon(Icons.date_range_rounded, size: 24, color: Colors.black),
-            //       ],
-            //     ),
-            //   ),
-            // ),
             TextField(
               controller: dateController,
               readOnly: true,
@@ -198,7 +121,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: dateOnly,
-                          lastDate: DateTime(2024),
+                          lastDate: DateTime(2100),
                         );
                         await validate_date(context, datePicked!, dateOnly);
                       },
