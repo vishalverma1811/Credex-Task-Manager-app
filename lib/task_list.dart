@@ -1,19 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:credex_task_manager/core/models/image_model.dart';
 import 'package:credex_task_manager/core/widgets/about.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
+
 import 'category_list.dart';
 import 'core/models/category_model.dart';
 import 'core/models/task_model.dart';
 import 'core/widgets/add_task.dart';
 import 'core/widgets/category_provider.dart';
-import 'core/widgets/category_status_provider.dart';
 import 'core/widgets/task_detail.dart';
 import 'main.dart';
-import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 
 class TaskList extends StatefulWidget {
   const TaskList({Key? key}) : super(key: key);
@@ -250,11 +251,15 @@ class _ListTile extends State<TaskList> {
     return DragAndDropItem(
       child: ListTile(
         title: Text(task.title, style: TextStyle(color: itemColor),),
-        onTap: () {
+        onTap: () async {
           print(task.title);
+          ImageModel? images = await imageBox.get(task.imageId);
+          print(images?.imagePath.length);
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => TaskDetailsPage(task: task)),
+            MaterialPageRoute(
+                builder: (context) => TaskDetailsPage(
+                    task: task, images: images ?? ImageModel(imagePath: []))),
           );
         },
       ),

@@ -1,5 +1,6 @@
+import 'package:credex_task_manager/core/models/image_model.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:hive/hive.dart';
+
 import '../../main.dart';
 import '../models/task_model.dart';
 
@@ -31,12 +32,8 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-
-
-
   Future<void> updateTask(int index, Task updatedTask) async {
     try {
-
       await tasksBox.putAt(index, updatedTask);
       loadTasks();
     } catch (error) {
@@ -44,10 +41,21 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  Future<void> addImages(String id, ImageModel images) async {
+    try {
+      print(images.imagePath.length);
 
-  Future<void> deleteTask(int index) async {
+      await imageBox.put(id, images);
+      // loadTasks();
+    } catch (error) {
+      print('Error updating task: $error');
+    }
+  }
+
+  Future<void> deleteTask(int index, String id) async {
     try {
       await tasksBox.deleteAt(index);
+      await tasksBox.delete(id);
       await loadTasks();
     } catch (error) {
       print('Error deleting task: $error');

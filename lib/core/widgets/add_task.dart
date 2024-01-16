@@ -1,10 +1,10 @@
 import 'package:credex_task_manager/core/widgets/task_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../task_list.dart';
 import '../models/task_model.dart';
-import 'package:intl/intl.dart';
-
 import 'category_provider.dart';
 
 class AddTaskPage extends StatefulWidget {
@@ -181,12 +181,12 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   else{
                     TaskProvider().addTask(
                       Task(
-                        title: title,
-                        description: description,
-                        category: categoryToAdd,
-                        status: status,
-                        dueDate: dueDate,
-                      ),
+                          title: title,
+                          description: description,
+                          category: categoryToAdd,
+                          status: status,
+                          dueDate: dueDate,
+                          imageId: const Uuid().v4()),
                     );
 
                     titleController.clear();

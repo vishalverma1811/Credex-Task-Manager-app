@@ -21,12 +21,16 @@ class Task {
   @HiveField(4)
   late final DateTime dueDate;
 
+  @HiveField(5)
+  String imageId;
+
   Task({
     required this.title,
     required this.description,
     required this.category,
     required this.status,
     required this.dueDate,
+    required this.imageId,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);

@@ -1,6 +1,7 @@
 import 'package:credex_task_manager/task_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'core/models/category_model.dart';
 import 'core/models/task_model.dart';
 import 'core/widgets/category_provider.dart';
@@ -176,7 +177,7 @@ class _CategoryListState extends State<CategoryList> {
 
     for (Task task in tasksToDelete) {
       int index = taskProvider.tasks.indexOf(task);
-      await taskProvider.deleteTask(index);
+      await taskProvider.deleteTask(index, task.imageId);
     }
   }
 

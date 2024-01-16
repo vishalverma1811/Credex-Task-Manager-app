@@ -22,13 +22,14 @@ class TaskAdapter extends TypeAdapter<Task> {
       category: fields[2] as String,
       status: fields[3] as String,
       dueDate: fields[4] as DateTime,
+      imageId: fields[5] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(3)
       ..write(obj.status)
       ..writeByte(4)
-      ..write(obj.dueDate);
+      ..write(obj.dueDate)
+      ..writeByte(5)
+      ..write(obj.imageId);
   }
 
   @override
@@ -57,17 +60,20 @@ class TaskAdapter extends TypeAdapter<Task> {
 // **************************************************************************
 
 Task _$TaskFromJson(Map<String, dynamic> json) => Task(
-      title: json['title'] as String,
+  title: json['title'] as String,
       description: json['description'] as String,
       category: json['category'] as String,
       status: json['status'] as String,
       dueDate: DateTime.parse(json['dueDate'] as String),
+      imageId: json['imageId'] as String,
     );
 
-Map<String, dynamic> _$TaskToJson(Task instance) => <String, dynamic>{
+Map<String, dynamic> _$TaskToJson(Task instance) =>
+    <String, dynamic>{
       'title': instance.title,
       'description': instance.description,
       'category': instance.category,
       'status': instance.status,
       'dueDate': instance.dueDate.toIso8601String(),
+      'imageId': instance.imageId,
     };
